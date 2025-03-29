@@ -11,19 +11,22 @@ app.use(express.json());
 
 // ✅ Allow only specific origins
 const allowedOrigins = [
-  "http://127.0.0.1:5500", // Base origin of your local frontend
+  "http://127.0.0.1:5500", // Local frontend
   "https://creative.exponential.com",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      if (!origin) {
+        return callback(null, true); // Allow requests without an origin
       }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
     },
+    credentials: true,
   })
 );
 
@@ -87,7 +90,7 @@ const refineResponse = async (query, context) => {
 
 // ✅ API endpoint for querying
 app.post("/ask", async (req, res) => {
-  const query = req.body.query || DEFAULT_QUERY;
+  const query = req.body.question || req.body.query || DEFAULT_QUERY;
   console.log(`🔍 Searching for: "${query}"`);
 
   const queryEmbedding = await getEmbedding(query);
