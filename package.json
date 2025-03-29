@@ -1,0 +1,28 @@
+{
+  "name": "chatagent_openai",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashishkummar/chatAgent_OpenAI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ashishkummar/chatAgent_OpenAI/issues"
+  },
+  "homepage": "https://github.com/ashishkummar/chatAgent_OpenAI#readme",
+  "description": "",
+  "dependencies": {
+    "@pinecone-database/pinecone": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "fs": "^0.0.1-security",
+    "mammoth": "^1.9.0",
+    "openai": "^4.90.0"
+  }
+}
