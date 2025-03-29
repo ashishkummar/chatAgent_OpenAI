@@ -1,21 +1,39 @@
 import express from "express";
+import cors from "cors";
 import dotenv from "dotenv";
 import OpenAI from "openai";
 import { Pinecone } from "@pinecone-database/pinecone";
-
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 
+// ✅ Allow only specific origins
+const allowedOrigins = [
+  "http://127.0.0.1:5500", // Base origin of your local frontend
+  "https://creative.exponential.com",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  })
+);
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 
-const INDEX_NAME = "dc-api-docs"; // Pinecone index name
-const EMBEDDING_MODEL = "text-embedding-ada-002"; // OpenAI embedding model
-const LLM_MODEL = "gpt-4-turbo"; // Best OpenAI model
-const DEFAULT_QUERY = "Tell me about hybrid gallery limitation"; // Default query
+const INDEX_NAME = "dc-api-docs";
+const EMBEDDING_MODEL = "text-embedding-ada-002";
+const LLM_MODEL = "gpt-4-turbo";
+const DEFAULT_QUERY = "Tell me about hybrid gallery limitation";
 
 // ✅ Convert query to embedding
 const getEmbedding = async (text) => {
@@ -36,7 +54,7 @@ const queryPinecone = async (queryEmbedding) => {
   try {
     const index = pinecone.index(INDEX_NAME);
     const response = await index.query({
-      topK: 5, // Fetch top 5 relevant matches
+      topK: 5,
       vector: queryEmbedding,
       includeValues: false,
       includeMetadata: true,
@@ -69,7 +87,7 @@ const refineResponse = async (query, context) => {
 
 // ✅ API endpoint for querying
 app.post("/ask", async (req, res) => {
-  const query = req.body.query || DEFAULT_QUERY; // Use default query if not provided
+  const query = req.body.query || DEFAULT_QUERY;
   console.log(`🔍 Searching for: "${query}"`);
 
   const queryEmbedding = await getEmbedding(query);
