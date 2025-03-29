@@ -5,7 +5,7 @@ async function askQuestion() {
 
     if (!question) {
         responseDiv.innerHTML += `<div class="error-message">⚠️ Please enter a question!</div>`;
-        responseDiv.scrollTop = responseDiv.scrollHeight; // Auto-scroll
+        smoothScroll(responseDiv);
         return;
     }
 
@@ -15,7 +15,7 @@ async function askQuestion() {
 
     // Append user's question in chat UI
     responseDiv.innerHTML += `<div class="user-message">${question}</div>`;
-    responseDiv.scrollTop = responseDiv.scrollHeight; // Auto-scroll
+    smoothScroll(responseDiv);
 
     try {
         const res = await fetch("https://chatagentopenai-production.up.railway.app/ask", {
@@ -43,12 +43,30 @@ async function askQuestion() {
         // Re-enable button after response/error
         askButton.disabled = false;
         askButton.innerHTML = "Ask";
-        document.getElementById("question").value = ""; // Clear input field after sending
 
-        responseDiv.scrollTop = responseDiv.scrollHeight; // Auto-scroll after response
+        smoothScroll(responseDiv);
     }
 }
 
+// Smooth scrolling function (prevents main page movement)
+function smoothScroll(element) {
+    const start = element.scrollTop;
+    const end = element.scrollHeight;
+    const duration = 500; // Adjust for faster/slower animation
+    const startTime = performance.now();
+
+    function animateScroll(time) {
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        element.scrollTop = start + (end - start) * progress;
+
+        if (progress < 1) {
+            requestAnimationFrame(animateScroll);
+        }
+    }
+
+    requestAnimationFrame(animateScroll);
+}
 
 // Function to format responses (Markdown-like styling)
 function refineMessage(msg) {
