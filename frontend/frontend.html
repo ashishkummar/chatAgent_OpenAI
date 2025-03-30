@@ -8,18 +8,30 @@
 </head>
 <body>
     <div class="chat-container">
-        <h2>Ask anything about Designer-Config API </h2>
+        <h2>Ask anything about Designer-Config API</h2>
         
-        <!-- Response Box (Will stay on top) -->
         <div id="response"></div>
 
-        <!-- Input Area (Stays at bottom) -->
         <div id="inputArea">
             <textarea id="question" placeholder="Ask a question..."></textarea>
-            <button onclick="askQuestion()">Ask</button>
+            <button  id="askButton">Ask</button>
+             
         </div>
+        <div class="stats">📊 <a href="https://creative.exponential.com/creative/devshowcase/AI/chat-agent3/history.html" target="_blank">Stats</div> 
     </div>
 
-    <script src="app.js"></script>
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Help us improve!</h3>
+            <textarea id="feedbackText" placeholder="Tell us what was wrong..."></textarea>
+            <button id="submitFeedback" onclick="submitFeedback()">Submit</button>
+        </div> 
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <div>
+ </div>
 </body>
 </html>

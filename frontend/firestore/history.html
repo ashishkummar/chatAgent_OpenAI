@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat History</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTthotYUGbiIQxiH6CuP9l7MZVJxJUY6o",
+      authDomain: "chat-agent-openai.firebaseapp.com",
+      projectId: "chat-agent-openai",
+      storageBucket: "chat-agent-openai.firebasestorage.app",
+      messagingSenderId: "245533128903",
+      appId: "1:245533128903:web:414320f666e8efaf6526e2"
+    };
+
+    // Initialize Firebase and Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadChatHistory() {
+      const historyContainer = document.getElementById("chatHistory");
+      const totalCountContainer = document.getElementById("totalCount");
+      // Show loading message
+      historyContainer.innerHTML = "<p>Loading chat history...</p>";
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "chatHistory"));
+        let totalQueries = 0,
+            totalDisliked = 0,
+            totalDislikedWithFeedback = 0,
+            totalSatisfied = 0,
+            totalNoFeedback = 0;
+        let chatEntriesHTML = "";
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          totalQueries++;
+
+          // Determine background color based on user reaction
+          let bgColor = "#fff"; // default color
+          if (typeof data.userReaction === "string") {
+            if (data.userReaction.startsWith("disliked")) {
+              bgColor = "#FFCCCC"; // light red
+            } else if (data.userReaction === "Satisfied with answer") {
+              bgColor = "#CCFFCC"; // light green
+            }
+          }
+
+          // Build HTML for each chat entry with inline style for background color
+          chatEntriesHTML += `<div class="chat-entry" style="background: ${bgColor};">
+                                <p><strong>Question:</strong> ${data.question || "N/A"}</p>
+                                <p><strong>Response:</strong> ${data.response || "N/A"}</p>
+                                <p><strong>User Reaction:</strong> ${data.userReaction || "No feedback"}</p>
+                                <hr/>
+                              </div>`;
+
+          if (typeof data.userReaction === "string") {
+            if (data.userReaction.startsWith("disliked:")) {
+              totalDislikedWithFeedback++;
+              totalDisliked++;
+            } else if (data.userReaction === "disliked") {
+              totalDisliked++;
+            } else if (data.userReaction === "Satisfied with answer") {
+              totalSatisfied++;
+            }
+          } else {
+            totalNoFeedback++;
+          }
+        });
+
+        // Update total count display
+        totalCountContainer.innerHTML = `Total Queries: ${totalQueries}`;
+
+        // Update the chat history container with the fetched data
+        if (totalQueries === 0) {
+          historyContainer.innerHTML = "<p>No chat history found.</p>";
+        } else {
+          historyContainer.innerHTML = chatEntriesHTML;
+        }
+
+        updateChart(totalDisliked, totalDislikedWithFeedback, totalSatisfied, totalNoFeedback, totalQueries);
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
+        historyContainer.innerHTML = "<p>Error loading history.</p>";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Delay to ensure the DOM is fully loaded
+      setTimeout(loadChatHistory, 1000);
+    });
+
+    let myChart;
+    function updateChart(disliked, dislikedWithFeedback, satisfied, noFeedback, total) {
+      const canvas = document.getElementById("statsChart");
+      if (!canvas) {
+        console.error("Canvas element not found");
+        return;
+      }
+      const ctx = canvas.getContext("2d");
+      if (myChart) myChart.destroy();
+
+      // Helper function to calculate percentages, avoiding division by zero
+      const calcPercentage = (value) => total ? ((value / total) * 100).toFixed(2) + "%" : "0%";
+
+      myChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: [
+            `👎 Disliked: ${disliked} | ${calcPercentage(disliked)}`,
+            `👎 Disliked with ✏️ Feedback: ${dislikedWithFeedback} | ${calcPercentage(dislikedWithFeedback)}`,
+            `😄 Satisfied: ${satisfied} | ${calcPercentage(satisfied)}`,
+            `👱 No Feedback: ${noFeedback} | ${calcPercentage(noFeedback)}`
+          ],
+          datasets: [{
+            label: "Chat Feedback Statistics",
+            data: [disliked, dislikedWithFeedback, satisfied, noFeedback],
+            backgroundColor: ["#FF4D4D", "#FFA500", "#4CAF50", "#607D8B"],
+            borderColor: ["#D32F2F", "#FF8C00", "#388E3C", "#455A64"],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 20px;
+      background: #f9f9f9;
+      position: relative;
+    }
+    .chart-container {
+      width: 100%;
+      height: 300px;
+      margin-top: 20px;
+    }
+    #chatHistory {
+      margin-bottom: 20px;
+    }
+    .chat-entry {
+      padding: 10px;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+    /* Style for the total count display at the top right */
+    #totalCount {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #fff;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Chat Feedback Statistics</h2>
+  <div id="totalCount">Total Queries: ⌛</div>
+  <div class="chart-container">
+    <canvas id="statsChart"></canvas>
+  </div>
+  <div id="chatHistory">
+    <p>Loading chat history...</p>
+  </div>
+</body>
+</html>
