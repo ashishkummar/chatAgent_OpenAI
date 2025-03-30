@@ -7,6 +7,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+    import { query, orderBy } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
 
     // Firebase configuration
     const firebaseConfig = {
@@ -29,7 +30,9 @@
       historyContainer.innerHTML = "<p>Loading chat history...</p>";
 
       try {
-        const querySnapshot = await getDocs(collection(db, "chatHistory"));
+
+const q = query(collection(db, "chatHistory"), orderBy("timestamp", "desc"));
+const querySnapshot = await getDocs(q);
         let totalQueries = 0,
             totalDisliked = 0,
             totalDislikedWithFeedback = 0,
