@@ -32,8 +32,7 @@ async function askQuestion() {
     }
 
     askButton.disabled = true;
-    askButton.innerHTML = "<img width='25px' src='./images/thinking.gif'> Thinking...";
-   
+    askButton.innerHTML = "⏳ Thinking...";
     responseDiv.innerHTML += `<div class="user-message">${question}</div>`;
     smoothScroll(responseDiv);
 
