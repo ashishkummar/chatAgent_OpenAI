@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chat History</title>
+  <link rel="stylesheet" href="css/history.css">
+ 
+   <script src="./lib/marked.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
@@ -27,7 +30,7 @@
       const historyContainer = document.getElementById("chatHistory");
       const totalCountContainer = document.getElementById("totalCount");
       // Show loading message
-      historyContainer.innerHTML = "<p>Loading chat history...</p>";
+      historyContainer.innerHTML = "<p> ⏳ Loading chat history...</p>";
 
       try {
 
@@ -57,7 +60,7 @@ const querySnapshot = await getDocs(q);
           // Build HTML for each chat entry with inline style for background color
           chatEntriesHTML += `<div class="chat-entry" style="background: ${bgColor};">
                                 <p><strong>Question:</strong> ${data.question || "N/A"}</p>
-                                <p><strong>Response:</strong> ${data.response || "N/A"}</p>
+                                <p><strong>Response:</strong> ${refineMessage(data.response) || "N/A"}</p>
                                 <p><strong>User Reaction:</strong> ${data.userReaction || "No feedback"}</p>
                                 <hr/>
                               </div>`;
@@ -140,6 +143,60 @@ const querySnapshot = await getDocs(q);
         }
       });
     }
+
+    //////
+
+
+
+    function refineMessage(msg) {
+    // Regex to match JS code blocks enclosed in triple backticks
+    const matches = msg.match(/```(js|javascript)([\s\S]*?)```/g);
+
+    let processedMsg = msg;
+
+    // If JS code blocks are found
+    if (matches) {
+        matches.forEach(match => {
+            // Extract JS code from the matched block
+            const jsCode = match.replace(/```(js|javascript)|```/g, "").trim();
+            // Wrap JS code block with HTML
+            const jsWrapped = `<div class="code-container"><pre><code class="language-js">${jsCode}</code></pre></div>`;
+            // Temporarily replace the original code block with a placeholder
+            processedMsg = processedMsg.replace(match, `{{CODE_BLOCK}}`);
+        });
+    }
+
+    // Apply marked.parse only on non-code content
+    processedMsg = processedMsg
+        .split("{{CODE_BLOCK}}")
+        .map(part => {
+            if (part.trim()) {
+                // Apply marked.parse and clean extra <br> if not needed
+                return marked.parse(part.trim()).replace(/<\/(p|div|ul|ol|li)>\s*<br>/g, "</$1>");
+            }
+            return "";
+        })
+        .join("{{CODE_BLOCK}}");
+
+    // Restore code blocks after applying marked.parse
+    if (matches) {
+        matches.forEach(match => {
+            const jsCode = match.replace(/```(js|javascript)|```/g, "").trim();
+            const jsWrapped = `<div class="code-container"><pre><code class="language-js">${jsCode}</code></pre></div>`;
+            processedMsg = processedMsg.replace("{{CODE_BLOCK}}", jsWrapped);
+        });
+    }
+
+    // Replace inline code wrapped in single backticks
+    processedMsg = processedMsg.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+    // ✅ Updated: Remove unwanted <br> after block elements
+    processedMsg = processedMsg.replace(/(<\/(p|div|ul|ol|li)>)<br>/g, "$1");
+
+    return processedMsg;
+}
+
+
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -178,13 +235,15 @@ const querySnapshot = await getDocs(q);
   </style>
 </head>
 <body>
-  <h2>Chat Feedback Statistics</h2>
-  <div id="totalCount">Total Queries: ⌛</div>
+  <h2>Chat Feedback Statistics</h2><div id="totalCount">Total Queries: ⌛</div>
+  <div>
+  
   <div class="chart-container">
     <canvas id="statsChart"></canvas>
   </div>
   <div id="chatHistory">
-    <p>Loading chat history...</p>
+    <p>⏳ Loading chat history...</p>
+  </div>
   </div>
 </body>
 </html>
